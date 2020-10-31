@@ -1,0 +1,17 @@
+qemu=-19
+X=-10
+compton=-10
+fluxbox=-10
+pulseaudio=-6
+chrome=-5
+nacl=-5
+term=-5
+emacs=-5
+slack=1
+sshd=1
+niced=20
+rust_tray=20
+notification-da=20
+lxdm-binary=20
+conky=20
+xosview=20

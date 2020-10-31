@@ -46,6 +46,7 @@ fn get_procs_procfs() -> std::vec::Vec<ProcInfo> {
 
 fn warning_killer() {
     for p in get_procs() {
+        println!("{} {}", p.pid, p.comm);
         assert!(p.comm.len() > 0);
         assert!(p.pid > 0);
     }

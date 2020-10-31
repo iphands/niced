@@ -1,3 +1,4 @@
+use std::fs::File;
 use std::{thread, fs};
 use std::time::{Duration};
 
@@ -6,7 +7,12 @@ struct ProcInfo {
     pid: i32,
 }
 
-fn try_renice(proc_info: &ProcInfo, niceness: i32, name: &str) -> bool {
+struct NiceItem {
+    comm: String,
+    target: i32,
+}
+
+fn try_renice(proc_info: &ProcInfo, niceness: i32, name: &String) -> bool {
     if proc_info.comm.starts_with(name) {
         // println!("renicing {}", proc_info.comm);
         do_tasks(proc_info.pid, niceness);
@@ -16,30 +22,11 @@ fn try_renice(proc_info: &ProcInfo, niceness: i32, name: &str) -> bool {
     return false;
 }
 
-fn do_renicing(procs: std::vec::Vec<ProcInfo>) {
+fn do_renicing(map: &Vec<NiceItem>, procs: Vec<ProcInfo>) {
     for prc in procs {
-        if try_renice(&prc, -19, "qemu") { continue };
-
-        if try_renice(&prc, -10, "X") { continue };
-        if try_renice(&prc, -10, "compton") { continue };
-        if try_renice(&prc, -10, "fluxbox") { continue };
-
-        if try_renice(&prc, -6,  "pulseaudio") { continue };
-
-        if try_renice(&prc, -5,  "chrome") { continue };
-        if try_renice(&prc, -5,  "nacl") { continue };
-        if try_renice(&prc, -5,  "term") { continue };
-        if try_renice(&prc, -5,  "emacs") { continue };
-
-        if try_renice(&prc, 1,  "slack") { continue };
-        if try_renice(&prc, 1,  "sshd") { continue };
-
-        if try_renice(&prc, 20, "niced") { continue };
-        if try_renice(&prc, 20, "rust_tray") { continue };
-        if try_renice(&prc, 20, "notification-da") { continue };
-        if try_renice(&prc, 20, "lxdm-binary") { continue };
-        if try_renice(&prc, 20, "conky") { continue };
-        if try_renice(&prc, 20, "xosview") { continue };
+        for i in map {
+            if try_renice(&prc, i.target, &i.comm) { continue };
+        }
     }
 }
 
@@ -82,10 +69,31 @@ fn get_procs() -> std::vec::Vec<ProcInfo> {
     return procs;
 }
 
+fn do_config() -> std::vec::Vec<NiceItem> {
+    let data: String = fs::read_to_string("/etc/niced.conf").unwrap();
+    let mut map: Vec<NiceItem> = Vec::new();
+    for line in data.lines() {
+        if line.contains('=') {
+            let items = line.split('=').collect::<Vec<&str>>();
+            // println!("{:?}", items);
+            if items.len() == 2 {
+                map.push(NiceItem {
+                    comm: String::from(items[0]),
+                    target: items[1].parse::<i32>().unwrap(),
+                });
+            }
+        }
+    }
+
+    return map;
+}
+
 fn main() {
     let delay = Duration::from_millis(10 * 1000);
+    let map: Vec<NiceItem> = do_config();
+
     loop {
-        do_renicing(get_procs());
+        do_renicing(&map, get_procs());
         thread::sleep(delay);
     }
 }

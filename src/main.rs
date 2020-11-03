@@ -1,4 +1,3 @@
-use std::fs::File;
 use std::{thread, fs};
 use std::time::{Duration};
 
@@ -35,8 +34,18 @@ fn do_tasks(pid: i32, niceness: i32) {
     let pid_path = format!("/proc/{}/task", pid);
     // println!("  path is {}", pid_path);
 
-    for dir_entry in fs::read_dir(pid_path).unwrap() {
-        let path = dir_entry.unwrap().path().display().to_string();
+    let dir_reader: fs::ReadDir = match fs::read_dir(&pid_path) {
+        Ok(r)  => r,
+        Err(_) => return,
+    };
+
+    for dir_entry in dir_reader {
+        let entry: fs::DirEntry = match dir_entry {
+            Ok(r)  => r,
+            Err(_) => continue,
+        };
+
+        let path = entry.path().display().to_string();
         let task_pid = path.split('/').collect::<Vec<&str>>()[4];
 
         if task_pid != format!("{}", pid) {
@@ -50,8 +59,14 @@ fn get_procs() -> std::vec::Vec<ProcInfo> {
     let mut procs = Vec::new();
 
     for dir_entry in fs::read_dir("/proc").unwrap() {
-        let path = dir_entry.unwrap().path().display().to_string();
+        let entry: fs::DirEntry = match dir_entry {
+            Ok(r)  => r,
+            Err(_) => continue,
+        };
+
+        let path = entry.path().display().to_string();
         let pid = path.split('/').collect::<Vec<&str>>()[2];
+
         if pid.chars().nth(0).unwrap().is_ascii_digit() {
             let comm_path = String::from(&path) + "/comm";
             let comm = match fs::read_to_string(comm_path) {

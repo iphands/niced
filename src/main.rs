@@ -14,10 +14,18 @@ struct NiceItem {
 fn try_renice(proc_info: &ProcInfo, niceness: i32, name: &String) -> bool {
     if proc_info.comm.starts_with(name) {
         // println!("renicing {}", proc_info.comm);
+
+        let pid = proc_info.pid as u32;
+        unsafe {
+            if niceness != libc::getpriority(libc::PRIO_PROCESS, pid) {
+                libc::setpriority(libc::PRIO_PROCESS, pid, niceness);
+            }
+        }
+
         do_tasks(proc_info.pid, niceness);
-        unsafe { libc::setpriority(libc::PRIO_PROCESS, proc_info.pid as u32, niceness); }
         return true;
     }
+
     return false;
 }
 
@@ -50,7 +58,12 @@ fn do_tasks(pid: i32, niceness: i32) {
 
         if task_pid != format!("{}", pid) {
             // println!("  renicing task_pid: {}", task_pid);
-            unsafe { libc::setpriority(libc::PRIO_PROCESS, task_pid.parse::<u32>().unwrap(), niceness); }
+            let pid = task_pid.parse::<u32>().unwrap();
+            unsafe {
+                if niceness != libc::getpriority(libc::PRIO_PROCESS, pid) {
+                    libc::setpriority(libc::PRIO_PROCESS, pid, niceness);
+                }
+            }
         }
     }
 }
@@ -104,11 +117,15 @@ fn do_config() -> std::vec::Vec<NiceItem> {
 }
 
 fn main() {
-    let delay = Duration::from_millis(10 * 1000);
+    let delay = Duration::from_millis(1 * 1000);
     let map: Vec<NiceItem> = do_config();
 
     loop {
+        // let now = Instant::now();
+        // for _ in 0..100 {
         do_renicing(&map, get_procs());
+        // }
+        // println!("nanos: {}", now.elapsed().as_nanos());
         thread::sleep(delay);
     }
 }

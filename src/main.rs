@@ -117,7 +117,7 @@ fn do_config() -> std::vec::Vec<NiceItem> {
 }
 
 fn main() {
-    let delay = Duration::from_millis(1 * 1000);
+    let delay = Duration::from_millis(15 * 1000);
     let map: Vec<NiceItem> = do_config();
 
     loop {

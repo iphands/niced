@@ -1,6 +1,6 @@
 [package]
 name = "niced"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Ian Page Hands <iphands@gmail.com>"]
 edition = "2018"
 description = "Keep it stupid simple renicing daemon"

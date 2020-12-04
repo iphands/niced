@@ -6,7 +6,7 @@ edition = "2018"
 description = "Keep it stupid simple renicing daemon"
 homepage = "https://github.com/iphands/niced"
 repository = "https://github.com/iphands/niced"
-license-file = "LICENSE"
+license = "GPL-3"
 
 [profile.release]
 opt-level = 3

@@ -3,6 +3,9 @@ name = "niced"
 version = "0.2.0"
 authors = ["Ian Page Hands <iphands@gmail.com>"]
 edition = "2018"
+description = "Keep it stupid simple renicing daemon"
+homepage = "https://github.com/iphands/niced"
+repository = "https://github.com/iphands/niced"
 
 [profile.release]
 opt-level = 3

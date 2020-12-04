@@ -30,11 +30,12 @@ fn try_renice(proc_info: &ProcInfo, niceness: i32, name: &String) -> bool {
 }
 
 fn do_renicing(map: &Vec<NiceItem>, procs: Vec<ProcInfo>) {
-    for prc in procs {
-        for i in map {
-            if try_renice(&prc, i.target, &i.comm) { continue };
-        }
-    }
+    procs.iter().for_each(|prc| {
+        map.iter().find(|i| {
+            // Note find breaks this loop if the return is true
+            try_renice(&prc, i.target, &i.comm)
+        });
+    });
 }
 
 fn do_tasks(pid: i32, niceness: i32) {
@@ -47,13 +48,13 @@ fn do_tasks(pid: i32, niceness: i32) {
         Err(_) => return,
     };
 
-    for dir_entry in dir_reader {
+    dir_reader.for_each(|dir_entry| {
         let entry: fs::DirEntry = match dir_entry {
             Ok(r)  => r,
-            Err(_) => continue,
+            Err(_) => return,
         };
 
-        let path = entry.path().display().to_string();
+        let path = entry.path().into_os_string().into_string().unwrap();
         let task_pid = path.split('/').collect::<Vec<&str>>()[4];
 
         if task_pid != format!("{}", pid) {
@@ -65,26 +66,26 @@ fn do_tasks(pid: i32, niceness: i32) {
                 }
             }
         }
-    }
+    });
 }
 
 fn get_procs() -> std::vec::Vec<ProcInfo> {
     let mut procs = Vec::new();
 
-    for dir_entry in fs::read_dir("/proc").unwrap() {
+    fs::read_dir("/proc").unwrap().for_each(|dir_entry| {
         let entry: fs::DirEntry = match dir_entry {
             Ok(r)  => r,
-            Err(_) => continue,
+            Err(_) => return,
         };
 
-        let path = entry.path().display().to_string();
-        let pid = path.split('/').collect::<Vec<&str>>()[2];
+        let path = entry.path().into_os_string().into_string().unwrap();
 
-        if pid.chars().nth(0).unwrap().is_ascii_digit() {
-            let comm_path = String::from(&path) + "/comm";
+        if path.bytes().nth(6).unwrap().is_ascii_digit() {
+            let pid = &path[6..];
+            let comm_path = format!("{}/comm", &path);
             let comm = match fs::read_to_string(comm_path) {
                 Ok(s)  => s,
-                Err(_) => continue,
+                Err(_) => return,
             };
 
             procs.push(ProcInfo {
@@ -92,7 +93,7 @@ fn get_procs() -> std::vec::Vec<ProcInfo> {
                 pid: pid.parse::<i32>().unwrap()
             });
         }
-    }
+    });
 
     return procs;
 }
@@ -100,7 +101,8 @@ fn get_procs() -> std::vec::Vec<ProcInfo> {
 fn do_config() -> std::vec::Vec<NiceItem> {
     let data: String = fs::read_to_string("/etc/niced.conf").unwrap();
     let mut map: Vec<NiceItem> = Vec::new();
-    for line in data.lines() {
+
+    data.lines().for_each(|line| {
         if line.contains('=') {
             let items = line.split('=').collect::<Vec<&str>>();
             // println!("{:?}", items);
@@ -111,7 +113,7 @@ fn do_config() -> std::vec::Vec<NiceItem> {
                 });
             }
         }
-    }
+    });
 
     return map;
 }

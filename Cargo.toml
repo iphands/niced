@@ -1,6 +1,6 @@
 [package]
 name = "niced"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Ian Page Hands <iphands@gmail.com>"]
 edition = "2018"
 
@@ -12,5 +12,5 @@ lto = true
 overflow-checks = false
 
 [dependencies]
-procfs = "0.8.1"
+procfs = "0.8"
 libc = "0.2"

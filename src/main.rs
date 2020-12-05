@@ -54,12 +54,17 @@ fn do_tasks(pid: i32, niceness: i32) {
             Err(_) => return,
         };
 
-        let path = entry.path().into_os_string().into_string().unwrap();
+        let path = match entry.path().into_os_string().into_string() {
+            Ok(s)  => s,
+            Err(_) => return,
+        };
+
         let task_pid = path.split('/').collect::<Vec<&str>>()[4];
 
         if task_pid != format!("{}", pid) {
             // println!("  renicing task_pid: {}", task_pid);
             let pid = task_pid.parse::<u32>().unwrap();
+
             unsafe {
                 if niceness != libc::getpriority(libc::PRIO_PROCESS, pid) {
                     libc::setpriority(libc::PRIO_PROCESS, pid, niceness);
@@ -72,7 +77,7 @@ fn do_tasks(pid: i32, niceness: i32) {
 fn get_procs() -> std::vec::Vec<ProcInfo> {
     let mut procs = Vec::new();
 
-    fs::read_dir("/proc").unwrap().for_each(|dir_entry| {
+    fs::read_dir("/proc").expect("Unable to open /proc... fail").for_each(|dir_entry| {
         let entry: fs::DirEntry = match dir_entry {
             Ok(r)  => r,
             Err(_) => return,
@@ -99,7 +104,7 @@ fn get_procs() -> std::vec::Vec<ProcInfo> {
 }
 
 fn do_config() -> std::vec::Vec<NiceItem> {
-    let data: String = fs::read_to_string("/etc/niced.conf").unwrap();
+    let data: String = fs::read_to_string("/etc/niced.conf").expect("Error opening conf file at /etc/niced.conf");
     let mut map: Vec<NiceItem> = Vec::new();
 
     data.lines().for_each(|line| {
@@ -109,7 +114,7 @@ fn do_config() -> std::vec::Vec<NiceItem> {
             if items.len() == 2 {
                 map.push(NiceItem {
                     comm: String::from(items[0]),
-                    target: items[1].parse::<i32>().unwrap(),
+                    target: items[1].parse::<i32>().expect("Error parsing conf file! (format is String=int\n)"),
                 });
             }
         }

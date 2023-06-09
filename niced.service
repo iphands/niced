@@ -1,0 +1,8 @@
+[Unit]
+Description=Renice daemon
+
+[Service]
+ExecStart=/usr/local/sbin/niced
+
+[Install]
+WantedBy=multi-user.target
